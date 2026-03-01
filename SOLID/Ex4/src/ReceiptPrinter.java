@@ -1,4 +1,4 @@
-import java.util.*;
+
 
 public class ReceiptPrinter {
     public static void print(BookingRequest req, Money monthly, Money deposit) {

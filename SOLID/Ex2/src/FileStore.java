@@ -1,6 +1,6 @@
 import java.util.*;
 
-public class FileStore {
+public class FileStore implements InvoiceRepository {
     private final Map<String, String> files = new HashMap<>();
 
     public void save(String name, String content) { files.put(name, content); }
