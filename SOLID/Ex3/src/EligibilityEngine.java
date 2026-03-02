@@ -33,7 +33,6 @@ public class EligibilityEngine {
     }
 }
 
-// Data class — kept in same file for minimal diff.
 class EligibilityEngineResult {
     public final String status;
     public final List<String> reasons;
