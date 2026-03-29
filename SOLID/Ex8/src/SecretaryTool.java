@@ -1,11 +1,13 @@
-public class SecretaryTool implements ClubAdminTools {
+public class SecretaryTool implements MinutesOperations {
+
     private final MinutesBook book;
-    public SecretaryTool(MinutesBook book) { this.book = book; }
 
-    @Override public void addMinutes(String text) { book.add(text); }
+    public SecretaryTool(MinutesBook book) {
+        this.book = book;
+    }
 
-    @Override public void addIncome(double amt, String note) { /* irrelevant */ }
-    @Override public void addExpense(double amt, String note) { /* irrelevant */ }
-    @Override public void createEvent(String name, double budget) { /* irrelevant */ }
-    @Override public int getEventsCount() { return 0; }
+    @Override
+    public void addMinutes(String text) {
+        book.add(text);
+    }
 }
