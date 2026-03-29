@@ -25,19 +25,32 @@ public class MetricsRegistry implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private static MetricsRegistry INSTANCE; // BROKEN: not volatile, not thread-safe
+    // here i made it volatile , as without it a another thread might see a partially constructed object.
+    private static volatile MetricsRegistry INSTANCE; // BROKEN: not volatile, not thread-safe
     private final Map<String, Long> counters = new HashMap<>();
 
     // BROKEN: should be private and should prevent second construction
-    public MetricsRegistry() {
+    private MetricsRegistry() {
         // intentionally empty
+        // her constructor is private , but still someone can still make a new instance.
+        // so now here we will modify thr constructor by having a check , so thar no second object canbe created .
+         if(INSTANCE == null){
+             throw new RuntimeException("Use getInstance() to create");
+         }
     }
+
+
 
     // BROKEN: racy lazy init; two threads can create two instances
     public static MetricsRegistry getInstance() {
-        if (INSTANCE == null) {
-            INSTANCE = new MetricsRegistry();
-        }
+        // Here I am doing double-check here  by this only one thread will come first and will create object .
+       if(INSTANCE == null){
+           synchronized (MetricsRegistry.class){
+               if (INSTANCE == null) {
+                   INSTANCE = new MetricsRegistry();
+               }
+           }
+       }
         return INSTANCE;
     }
 
@@ -58,4 +71,10 @@ public class MetricsRegistry implements Serializable {
     }
 
     // TODO: implement readResolve() to preserve singleton on deserialization
+    // Well , here we have the issue of serialisation and , we have to solve it ,
+    // so we will create a method readResolve() , which will replace the deserialized object with this one instead.
+    @Serial
+    protected Object readResolve() {
+        return getInstance();
+    }
 }
