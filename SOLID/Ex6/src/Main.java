@@ -1,3 +1,10 @@
+/**
+ * Main demo.
+ *
+ * After the LSP refactoring, we no longer need try-catch or instanceof checks.
+ * Every NotificationSender can be used uniformly — if there's a channel-specific
+ * issue (like WhatsApp needing E.164 format), the sender handles it gracefully.
+ */
 public class Main {
     public static void main(String[] args) {
         System.out.println("=== Notification Demo ===");
@@ -9,14 +16,10 @@ public class Main {
         NotificationSender sms = new SmsSender(audit);
         NotificationSender wa = new WhatsAppSender(audit);
 
+        // no more try-catch needed — all senders follow the same contract
         email.send(n);
         sms.send(n);
-        try {
-            wa.send(n);
-        } catch (RuntimeException ex) {
-            System.out.println("WA ERROR: " + ex.getMessage());
-            audit.add("WA failed");
-        }
+        wa.send(n);
 
         System.out.println("AUDIT entries=" + audit.size());
     }

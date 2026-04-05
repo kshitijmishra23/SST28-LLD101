@@ -1,0 +1,135 @@
+@startuml ParkingLot_ClassDiagram
+
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+' ───── Enums ─────
+enum VehicleType {
+    TWO_WHEELER
+    CAR
+    BUS
+}
+
+enum SlotType {
+    SMALL
+    MEDIUM
+    LARGE
+}
+
+' ───── Models ─────
+class Vehicle {
+    - licensePlate : String
+    - type : VehicleType
+    + getLicensePlate() : String
+    + getType() : VehicleType
+}
+
+class ParkingSlot {
+    - slotNumber : int
+    - type : SlotType
+    - floor : int
+    - occupied : boolean
+    + occupy() : void
+    + free() : void
+    + isOccupied() : boolean
+}
+
+class Gate {
+    - gateNumber : int
+    - floor : int
+    + getGateNumber() : int
+    + getFloor() : int
+}
+
+class ParkingTicket {
+    - ticketId : String
+    - vehicle : Vehicle
+    - slot : ParkingSlot
+    - entryTime : LocalDateTime
+    + getTicketId() : String
+    + getVehicle() : Vehicle
+    + getSlot() : ParkingSlot
+    + getEntryTime() : LocalDateTime
+}
+
+class Bill {
+    - ticket : ParkingTicket
+    - exitTime : LocalDateTime
+    - hoursParked : long
+    - totalAmount : int
+    + getTicket() : ParkingTicket
+    + getHoursParked() : long
+    + getTotalAmount() : int
+}
+
+' ───── Utility ─────
+class VehicleSlotMapping {
+    - {static} COMPATIBLE : Map<VehicleType, List<SlotType>>
+    + {static} compatibleSlots(VehicleType) : List<SlotType>
+}
+
+' ───── Interfaces (Abstractions) ─────
+interface SlotAssignmentStrategy <<Strategy>> {
+    + findSlot(slots, vehicleType, requestedSlotType, entryGate) : Optional<ParkingSlot>
+}
+
+interface PricingPolicy <<Strategy>> {
+    + ratePerHour(slotType : SlotType) : int
+}
+
+' ───── Concrete Implementations ─────
+class NearestSlotStrategy {
+    + findSlot(slots, vehicleType, requestedSlotType, entryGate) : Optional<ParkingSlot>
+    - compareByDistance(a, b, gate) : int
+}
+
+class FlatRatePricingPolicy {
+    - rates : Map<SlotType, Integer>
+    + ratePerHour(slotType : SlotType) : int
+}
+
+' ───── Services ─────
+class BillingService {
+    - pricingPolicy : PricingPolicy
+    + generateBill(ticket, exitTime) : Bill
+}
+
+class ParkingLot {
+    - slots : List<ParkingSlot>
+    - gates : Map<Integer, Gate>
+    - assignmentStrategy : SlotAssignmentStrategy
+    - billingService : BillingService
+    - activeTickets : Map<String, ParkingTicket>
+    - ticketCounter : int
+    + park(vehicle, entryTime, slotType, gateId) : ParkingTicket
+    + status() : Map<SlotType, long[]>
+    + exit(ticket, exitTime) : Bill
+}
+
+' ───── Relationships ─────
+
+' Implements
+NearestSlotStrategy ..|> SlotAssignmentStrategy
+FlatRatePricingPolicy ..|> PricingPolicy
+
+' Dependencies (DIP — depends on abstractions)
+ParkingLot --> SlotAssignmentStrategy : uses
+ParkingLot --> BillingService : uses
+BillingService --> PricingPolicy : uses
+
+' Compositions / Associations
+ParkingLot o-- ParkingSlot : contains many
+ParkingLot o-- Gate : contains many
+ParkingLot o-- ParkingTicket : tracks active
+
+ParkingTicket --> Vehicle : refers to
+ParkingTicket --> ParkingSlot : assigned to
+Bill --> ParkingTicket : generated from
+
+Vehicle --> VehicleType
+ParkingSlot --> SlotType
+NearestSlotStrategy ..> VehicleSlotMapping : calls
+VehicleSlotMapping ..> VehicleType
+VehicleSlotMapping ..> SlotType
+
+@enduml

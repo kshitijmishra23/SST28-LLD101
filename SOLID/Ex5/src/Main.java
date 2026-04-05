@@ -7,17 +7,15 @@ public class Main {
         Exporter csv = new CsvExporter();
         Exporter json = new JsonExporter();
 
-        System.out.println("PDF: " + safe(pdf, req));
-        System.out.println("CSV: " + safe(csv, req));
-        System.out.println("JSON: " + safe(json, req));
+        System.out.println("PDF: " + format(pdf.export(req)));
+        System.out.println("CSV: " + format(csv.export(req)));
+        System.out.println("JSON: " + format(json.export(req)));
     }
 
-    private static String safe(Exporter e, ExportRequest r) {
-        try {
-            ExportResult out = e.export(r);
-            return "OK bytes=" + out.bytes.length;
-        } catch (RuntimeException ex) {
-            return "ERROR: " + ex.getMessage();
+    private static String format(ExportResult result) {
+        if (!result.isSuccess()) {
+            return "ERROR: " + result.error;
         }
+        return "OK bytes=" + result.bytes.length;
     }
 }

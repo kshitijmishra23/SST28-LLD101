@@ -1,0 +1,71 @@
+@startuml Distributed Cache
+
+skinparam classAttributeIconSize 0
+
+interface Database {
+  + get(key: String): String
+  + put(key: String, value: String): void
+}
+
+class InMemoryDatabase {
+  - store: Map<String, String>
+  + get(key: String): String
+  + put(key: String, value: String): void
+}
+
+interface EvictionPolicy<K> {
+  + keyAccessed(key: K): void
+  + evict(): K
+  + remove(key: K): void
+}
+
+class LRUEvictionPolicy<K> {
+  - order: LinkedHashSet<K>
+  + keyAccessed(key: K): void
+  + evict(): K
+  + remove(key: K): void
+}
+
+interface DistributionStrategy {
+  + getNodeIndex(key: String, totalNodes: int): int
+}
+
+class ModuloDistributionStrategy {
+  + getNodeIndex(key: String, totalNodes: int): int
+}
+
+class CacheNode {
+  - id: int
+  - capacity: int
+  - storage: Map<String, String>
+  - evictionPolicy: EvictionPolicy<String>
+  + get(key: String): String
+  + put(key: String, value: String): void
+  + containsKey(key: String): boolean
+}
+
+interface EvictionPolicyFactory<K> {
+  + create(): EvictionPolicy<K>
+}
+
+class DistributedCache {
+  - nodes: List<CacheNode>
+  - distributionStrategy: DistributionStrategy
+  - database: Database
+  + get(key: String): String
+  + put(key: String, value: String): void
+  - getResponsibleNode(key: String): CacheNode
+}
+
+Database <|.. InMemoryDatabase
+EvictionPolicy <|.. LRUEvictionPolicy
+DistributionStrategy <|.. ModuloDistributionStrategy
+EvictionPolicyFactory ..> EvictionPolicy : creates
+
+DistributedCache --> "1" DistributionStrategy : uses
+DistributedCache --> "1" EvictionPolicyFactory : uses
+DistributedCache --> "1" Database : reads/writes
+DistributedCache --> "1..*" CacheNode : manages
+CacheNode --> "1" EvictionPolicy : delegates eviction to
+
+@enduml

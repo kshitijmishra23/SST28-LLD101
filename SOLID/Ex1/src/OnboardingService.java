@@ -1,47 +1,48 @@
 import java.util.*;
 
+/**
+ * Orchestrates the onboarding workflow by delegating to focused components.
+ * No longer does parsing, validation, formatting, or persistence directly.
+ */
 public class OnboardingService {
-    private final FakeDb db;
+    private final StudentRepository repository;
+    private final StudentDataParser parser;
+    private final StudentValidator validator;
+    private final OnboardingPrinter printer;
 
-    public OnboardingService(FakeDb db) { this.db = db; }
+    public OnboardingService(StudentRepository repository) {
+        this.repository = repository;
+        this.parser = new StudentDataParser();
+        this.validator = new StudentValidator();
+        this.printer = new OnboardingPrinter();
+    }
 
-    // Intentionally violates SRP: parses + validates + creates ID + saves + prints.
     public void registerFromRawInput(String raw) {
-        System.out.println("INPUT: " + raw);
+        printer.printInput(raw);
 
-        Map<String,String> kv = new LinkedHashMap<>();
-        String[] parts = raw.split(";");
-        for (String p : parts) {
-            String[] t = p.split("=", 2);
-            if (t.length == 2) kv.put(t[0].trim(), t[1].trim());
-        }
+        // step 1 — parse the raw string into structured data
+        Map<String, String> data = parser.parse(raw);
 
-        String name = kv.getOrDefault("name", "");
-        String email = kv.getOrDefault("email", "");
-        String phone = kv.getOrDefault("phone", "");
-        String program = kv.getOrDefault("program", "");
-
-        // validation inline, printing inline
-        List<String> errors = new ArrayList<>();
-        if (name.isBlank()) errors.add("name is required");
-        if (email.isBlank() || !email.contains("@")) errors.add("email is invalid");
-        if (phone.isBlank() || !phone.chars().allMatch(Character::isDigit)) errors.add("phone is invalid");
-        if (!(program.equals("CSE") || program.equals("AI") || program.equals("SWE"))) errors.add("program is invalid");
-
+        // step 2 — validate the parsed fields
+        List<String> errors = validator.validate(data);
         if (!errors.isEmpty()) {
-            System.out.println("ERROR: cannot register");
-            for (String e : errors) System.out.println("- " + e);
+            printer.printErrors(errors);
             return;
         }
 
-        String id = IdUtil.nextStudentId(db.count());
+        // step 3 — build the student record
+        String name = data.getOrDefault("name", "");
+        String email = data.getOrDefault("email", "");
+        String phone = data.getOrDefault("phone", "");
+        String program = data.getOrDefault("program", "");
+
+        String id = IdUtil.nextStudentId(repository.count());
         StudentRecord rec = new StudentRecord(id, name, email, phone, program);
 
-        db.save(rec);
+        // step 4 — persist
+        repository.save(rec);
 
-        System.out.println("OK: created student " + id);
-        System.out.println("Saved. Total students: " + db.count());
-        System.out.println("CONFIRMATION:");
-        System.out.println(rec);
+        // step 5 — confirm
+        printer.printSuccess(id, repository.count(), rec);
     }
 }

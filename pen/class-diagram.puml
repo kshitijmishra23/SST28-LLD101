@@ -1,0 +1,74 @@
+@startuml Pen_ClassDiagram
+
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+' ───── Enum ─────
+enum Color {
+    RED
+    BLUE
+    BLACK
+    GREEN
+    + label() : String
+}
+
+' ───── Models ─────
+class Refill {
+    - color : Color
+    - empty : boolean
+    + getColor() : Color
+    + isEmpty() : boolean
+    + exhaust() : void
+}
+
+' ───── Interface (Abstraction) ─────
+interface OpenCloseStrategy <<Strategy>> {
+    + open() : void
+    + close() : void
+}
+
+' ───── Concrete Strategies ─────
+class CapStrategy {
+    + open() : void
+    + close() : void
+}
+
+class ClickStrategy {
+    + open() : void
+    + close() : void
+}
+
+' ───── Core ─────
+class Pen {
+    - mechanism : OpenCloseStrategy
+    - refill : Refill
+    + write(text : String) : void
+    + changeRefill(newRefill : Refill) : void
+    + getColor() : Color
+}
+
+' ───── Entry Point ─────
+class Main {
+    + {static} main(args : String[]) : void
+}
+
+' ───── Relationships ─────
+
+' Implements
+CapStrategy ..|> OpenCloseStrategy
+ClickStrategy ..|> OpenCloseStrategy
+
+' DIP — Pen depends on abstraction, not concrete strategies
+Pen --> OpenCloseStrategy : uses
+
+' Composition / Association
+Pen o-- Refill : has a
+Refill --> Color : holds
+
+' Main wires everything together
+Main ..> Pen : creates
+Main ..> CapStrategy : creates
+Main ..> ClickStrategy : creates
+Main ..> Refill : creates
+
+@enduml
